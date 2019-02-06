@@ -32,6 +32,7 @@ class WebviewScaffold extends StatefulWidget {
     this.initialChild,
     this.allowFileURLs,
     this.invalidUrlRegex,
+    this.enableMessaging,
   }) : super(key: key);
 
   final PreferredSizeWidget appBar;
@@ -56,6 +57,7 @@ class WebviewScaffold extends StatefulWidget {
   final Widget initialChild;
   final bool allowFileURLs;
   final String invalidUrlRegex;
+  final bool enableMessaging;
 
   @override
   _WebviewScaffoldState createState() => _WebviewScaffoldState();
@@ -122,6 +124,7 @@ class _WebviewScaffoldState extends State<WebviewScaffold> {
               appCacheEnabled: widget.appCacheEnabled,
               allowFileURLs: widget.allowFileURLs,
               invalidUrlRegex: widget.invalidUrlRegex,
+              enableMessaging: widget.enableMessaging,
             );
           } else {
             if (_rect != value) {
