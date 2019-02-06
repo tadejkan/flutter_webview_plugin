@@ -9,6 +9,7 @@ static NSString *const kPostMessageHost = @"postMessage";
 @interface FlutterWebviewPlugin() <WKNavigationDelegate, UIScrollViewDelegate, WKUIDelegate> {
     BOOL _enableAppScheme;
     BOOL _enableZoom;
+    NSString* _invalidUrlRegex;
 }
 @end
 
@@ -91,6 +92,8 @@ static NSString *const kPostMessageHost = @"postMessage";
     NSString *userAgent = call.arguments[@"userAgent"];
     NSNumber *withZoom = call.arguments[@"withZoom"];
     NSNumber *scrollBar = call.arguments[@"scrollBar"];
+    NSNumber *withJavascript = call.arguments[@"withJavascript"];
+    _invalidUrlRegex = call.arguments[@"invalidUrlRegex"];
 
     if (clearCache != (id)[NSNull null] && [clearCache boolValue]) {
         [[NSURLCache sharedURLCache] removeAllCachedResponses];
@@ -123,6 +126,13 @@ static NSString *const kPostMessageHost = @"postMessage";
     self.webview.hidden = [hidden boolValue];
     self.webview.scrollView.showsHorizontalScrollIndicator = [scrollBar boolValue];
     self.webview.scrollView.showsVerticalScrollIndicator = [scrollBar boolValue];
+
+    WKPreferences* preferences = [[self.webview configuration] preferences];
+    if ([withJavascript boolValue]) {
+        [preferences setJavaScriptEnabled:YES];
+    } else {
+        [preferences setJavaScriptEnabled:NO];
+    }
 
     _enableZoom = [withZoom boolValue];
 
@@ -320,6 +330,23 @@ static NSString *const kPostMessageHost = @"postMessage";
     }
 }
 
+- (bool)checkInvalidUrl:(NSURL*)url {
+  NSString* urlString = url != nil ? [url absoluteString] : nil;
+  if (_invalidUrlRegex != [NSNull null] && urlString != nil) {
+    NSError* error = NULL;
+    NSRegularExpression* regex =
+        [NSRegularExpression regularExpressionWithPattern:_invalidUrlRegex
+                                                  options:NSRegularExpressionCaseInsensitive
+                                                    error:&error];
+    NSTextCheckingResult* match = [regex firstMatchInString:urlString
+                                                    options:0
+                                                      range:NSMakeRange(0, [urlString length])];
+    return match != nil;
+  } else {
+    return false;
+  }
+}
+
 #pragma mark -- WkWebView Delegate
 
 - (WKWebView *)webView:(WKWebView *)webView createWebViewWithConfiguration:
@@ -337,6 +364,7 @@ static NSString *const kPostMessageHost = @"postMessage";
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction
     decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
 
+    BOOL isInvalid = [self checkInvalidUrl: navigationAction.request.URL];
     BOOL isJSNavigation = [navigationAction.request.URL.scheme isEqualToString:kJSNavigationScheme];
     BOOL isJSPostMessage = [navigationAction.request.URL.host isEqualToString:kPostMessageHost];
 
@@ -363,13 +391,13 @@ static NSString *const kPostMessageHost = @"postMessage";
     }
 
     id data = @{@"url": navigationAction.request.URL.absoluteString,
-                @"type": @"shouldStart",
+                @"type": isInvalid ? @"abortLoad" : @"shouldStart",
                 @"navigationType": [NSNumber numberWithInt:navigationAction.navigationType]};
     [channel invokeMethod:@"onState" arguments:data];
 
     if (navigationAction.navigationType == WKNavigationTypeBackForward) {
         [channel invokeMethod:@"onBackPressed" arguments:nil];
-    } else {
+    } else if (!isInvalid) {
         id data = @{@"url": navigationAction.request.URL.absoluteString};
         [channel invokeMethod:@"onUrlChanged" arguments:data];
     }
@@ -378,7 +406,11 @@ static NSString *const kPostMessageHost = @"postMessage";
         ([webView.URL.scheme isEqualToString:@"http"] ||
          [webView.URL.scheme isEqualToString:@"https"] ||
          [webView.URL.scheme isEqualToString:@"about"])) {
-        decisionHandler(WKNavigationActionPolicyAllow);
+         if (isInvalid) {
+            decisionHandler(WKNavigationActionPolicyCancel);
+         } else {
+            decisionHandler(WKNavigationActionPolicyAllow);
+         }
     } else {
         decisionHandler(WKNavigationActionPolicyCancel);
     }

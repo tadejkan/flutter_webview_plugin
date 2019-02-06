@@ -103,6 +103,8 @@ public class FlutterWebviewPlugin implements MethodCallHandler, PluginRegistry.A
         boolean scrollBar = call.argument("scrollBar");
         boolean allowFileURLs = call.argument("allowFileURLs");
         boolean enableMessaging = call.argument("enableMessaging");
+        boolean useWideViewPort = call.argument("useWideViewPort");
+        String invalidUrlRegex = call.argument("invalidUrlRegex");
 
         if (webViewManager == null || webViewManager.closed == true) {
             webViewManager = new WebviewManager(activity);
@@ -126,6 +128,8 @@ public class FlutterWebviewPlugin implements MethodCallHandler, PluginRegistry.A
                 appCacheEnabled,
                 allowFileURLs,
                 enableMessaging
+                useWideViewPort,
+                invalidUrlRegex
         );
         result.success(null);
     }

@@ -6,7 +6,10 @@ import 'package:flutter/services.dart';
 
 const _kChannel = 'flutter_webview_plugin';
 
-enum WebViewState { shouldStart, startLoad, finishLoad }
+// TODO: more general state for iOS/android
+enum WebViewState { shouldStart, startLoad, finishLoad, abortLoad }
+
+// TODO: use an id by webview to be able to manage multiple webview
 
 /// Singleton class that communicate with a Webview Instance
 class FlutterWebviewPlugin {
@@ -90,7 +93,6 @@ class FlutterWebviewPlugin {
   /// Start the Webview with [url]
   /// - [headers] specify additional HTTP headers
   /// - [withJavascript] enable Javascript or not for the Webview
-  ///     iOS WebView: Not implemented yet
   /// - [clearCache] clear the cache of the Webview
   /// - [clearCookies] clear all cookies of the Webview
   /// - [hidden] not show
@@ -106,8 +108,11 @@ class FlutterWebviewPlugin {
   ///     Allow local files on iOs > 9.0
   /// - [scrollBar]: enable or disable scrollbar
   /// - [enableMessaging]: enable postMessage
-  Future<Null> launch(
-    String url, {
+  /// - [supportMultipleWindows] enable multiple windows support in Android
+  /// - [invalidUrlRegex] is the regular expression of URLs that web view shouldn't load.
+  /// For example, when web view is redirected to a specific URL, you want to intercept
+  /// this process by stopping loading this URL and replacing web view by another screen.
+  Future<Null> launch(String url, {
     Map<String, String> headers,
     bool withJavascript,
     bool clearCache,
@@ -124,6 +129,8 @@ class FlutterWebviewPlugin {
     bool appCacheEnabled,
     bool allowFileURLs,
     bool enableMessaging,
+    bool useWideViewPort,
+    String invalidUrlRegex,
   }) async {
     final args = <String, dynamic>{
       'url': url,
@@ -141,6 +148,8 @@ class FlutterWebviewPlugin {
       'appCacheEnabled': appCacheEnabled ?? false,
       'allowFileURLs': allowFileURLs ?? false,
       'enableMessaging': enableMessaging ?? false,
+      'useWideViewPort': useWideViewPort ?? false,
+      'invalidUrlRegex': invalidUrlRegex,
     };
 
     if (headers != null) {
@@ -266,6 +275,9 @@ class WebViewStateChanged {
         break;
       case 'finishLoad':
         t = WebViewState.finishLoad;
+        break;
+      case 'abortLoad':
+        t = WebViewState.abortLoad;
         break;
     }
     return WebViewStateChanged(t, map['url'], map['navigationType']);

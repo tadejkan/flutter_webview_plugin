@@ -2,7 +2,6 @@ package com.flutter_webview_plugin;
 
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Log;
 import android.annotation.TargetApi;
 import android.app.Activity;
 
@@ -15,7 +14,6 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
 import java.util.HashMap;
@@ -82,13 +80,14 @@ class WebviewManager {
     boolean closed = false;
     WebView webView;
     Activity activity;
+    BrowserClient webViewClient;
     ResultHandler resultHandler;
 
     WebviewManager(final Activity activity) {
         this.webView = new ObservableWebView(activity);
         this.activity = activity;
         this.resultHandler = new ResultHandler();
-        WebViewClient webViewClient = new BrowserClient();
+        webViewClient = new BrowserClient();
         webView.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
@@ -221,6 +220,8 @@ class WebviewManager {
             boolean appCacheEnabled,
             boolean allowFileURLs,
             boolean enableMessaging
+            boolean useWideViewPort,
+            String invalidUrlRegex
     ) {
         webView.getSettings().setJavaScriptEnabled(withJavascript);
         webView.getSettings().setBuiltInZoomControls(withZoom);
@@ -234,6 +235,10 @@ class WebviewManager {
 
         webView.getSettings().setAllowFileAccessFromFileURLs(allowFileURLs);
         webView.getSettings().setAllowUniversalAccessFromFileURLs(allowFileURLs);
+
+        webView.getSettings().setUseWideViewPort(useWideViewPort);
+
+        webViewClient.updateInvalidUrlRegex(invalidUrlRegex);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
