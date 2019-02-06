@@ -127,7 +127,7 @@ public class FlutterWebviewPlugin implements MethodCallHandler, PluginRegistry.A
                 supportMultipleWindows,
                 appCacheEnabled,
                 allowFileURLs,
-                enableMessaging
+                enableMessaging,
                 useWideViewPort,
                 invalidUrlRegex
         );

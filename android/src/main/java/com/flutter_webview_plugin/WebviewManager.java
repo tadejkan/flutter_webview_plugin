@@ -219,7 +219,7 @@ class WebviewManager {
             boolean supportMultipleWindows,
             boolean appCacheEnabled,
             boolean allowFileURLs,
-            boolean enableMessaging
+            boolean enableMessaging,
             boolean useWideViewPort,
             String invalidUrlRegex
     ) {
