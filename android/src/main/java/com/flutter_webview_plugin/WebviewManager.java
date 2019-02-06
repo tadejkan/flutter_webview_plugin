@@ -5,7 +5,8 @@ import android.net.Uri;
 import android.util.Log;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.os.Build;
+
+import android.os.*;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -119,9 +120,20 @@ class WebviewManager {
         });
 
         webView.setWebViewClient(webViewClient);
-        webView.setWebChromeClient(new WebChromeClient() {
-            // The undocumented magic method override
-            // Eclipse will swear at you if you try to put @Override here
+        webView.setWebChromeClient(new WebChromeClient()
+        {
+            // For opening external browser window
+            @Override
+            public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture,
+                                          Message resultMsg) {
+                WebView newWebView = new WebView(view.getContext());
+                WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+                transport.setWebView(newWebView);
+                resultMsg.sendToTarget();
+                return true;
+            }
+            //The undocumented magic method override
+            //Eclipse will swear at you if you try to put @Override here
             // For Android 3.0+
             public void openFileChooser(ValueCallback<Uri> uploadMsg) {
 
