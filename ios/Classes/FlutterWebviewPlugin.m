@@ -127,7 +127,6 @@ static NSString *const kPostMessageHost = @"postMessage";
     self.webview.scrollView.showsHorizontalScrollIndicator = [scrollBar boolValue];
     self.webview.scrollView.showsVerticalScrollIndicator = [scrollBar boolValue];
 
-    WKPreferences* preferences = [[self.webview configuration] preferences];
     if ([withJavascript boolValue]) {
         [preferences setJavaScriptEnabled:YES];
     } else {
@@ -354,7 +353,12 @@ static NSString *const kPostMessageHost = @"postMessage";
 *)configuration forNavigationAction:(WKNavigationAction *)navigationAction windowFeatures:(WKWindowFeatures *)windowFeatures {
      UIApplication *application = [UIApplication sharedApplication];
     if (@available(iOS 10.0, *)) {
-        [application openURL:navigationAction.request.URL options:@{} completionHandler:nil];
+        if (!navigationAction.targetFrame.isMainFrame) {
+            [webView loadRequest:navigationAction.request];
+        }
+        else {
+            [application openURL:navigationAction.request.URL options:@{} completionHandler:nil];
+        }
     } else {
         // You're screwed
     }
@@ -414,16 +418,6 @@ static NSString *const kPostMessageHost = @"postMessage";
     } else {
         decisionHandler(WKNavigationActionPolicyCancel);
     }
-}
-
-- (WKWebView *)webView:(WKWebView *)webView createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
-    forNavigationAction:(WKNavigationAction *)navigationAction windowFeatures:(WKWindowFeatures *)windowFeatures {
-
-    if (!navigationAction.targetFrame.isMainFrame) {
-        [webView loadRequest:navigationAction.request];
-    }
-
-    return nil;
 }
 
 - (void)webView:(WKWebView *)webView runJavaScriptAlertPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(void))completionHandler
