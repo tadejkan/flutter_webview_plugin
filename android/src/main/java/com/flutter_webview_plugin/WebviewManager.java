@@ -387,9 +387,15 @@ class WebviewManager {
     }
 
     public void onMessage(String message) {
-        Map<String, String> _event = new HashMap<>();
+        final Map<String, String> _event = new HashMap<>();
         _event.put("data", (String) message);
-        FlutterWebviewPlugin.channel.invokeMethod("onWebviewMessage", _event);
+        
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                FlutterWebviewPlugin.channel.invokeMethod("onWebviewMessage", _event);
+            }
+        });
     }
 
     public void postMessage(MethodCall call, final MethodChannel.Result result) {
